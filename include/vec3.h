@@ -4,8 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-class vec3
-{
+class vec3 {
     double e[3]; // x, y, z
 public:
     vec3();

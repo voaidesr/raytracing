@@ -23,3 +23,10 @@ add_executable(tests
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_include_directories(tests PRIVATE include)
+
+enable_testing()
+
+include(CTest)
+include(Catch)
+
+catch_discover_tests(tests)

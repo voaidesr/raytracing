@@ -28,5 +28,5 @@ To execute:
 
 To run tests:
 ```bash
-./tests
+ctest
 ```

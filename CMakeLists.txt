@@ -16,12 +16,16 @@ include_directories(include)
 
 add_executable(raytracing
     main.cpp
+    src/vec3.cpp
+    src/color.cpp
 )
 
 add_executable(tests
     tests/test_vec3.cpp
     tests/test_color.cpp
     tests/test_ray.cpp
+    src/vec3.cpp
+    src/color.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_include_directories(tests PRIVATE include)

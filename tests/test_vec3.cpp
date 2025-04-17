@@ -1,7 +1,6 @@
 #define CATCH_CONFIG_MAIN  // Only here!
 #include <catch2/catch_all.hpp>
 #include "vec3.h"
-#include <cmath>
 
 TEST_CASE("floating point equality") {
     REQUIRE(fp_eq(2.467, 2.467) == true);

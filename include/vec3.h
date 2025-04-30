@@ -23,6 +23,7 @@ public:
     vec3& operator*= (double a);
     vec3& operator/= (double a);
     double length() const;
+    double length_squared() const;
 };
 
 // alias

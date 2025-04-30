@@ -62,6 +62,10 @@ double vec3::length() const {
     return std::sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);
 }
 
+double vec3::length_squared() const {
+    return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+}
+
 // Free functions
 
 std::ostream& operator<<(std::ostream& out, const vec3& v) {

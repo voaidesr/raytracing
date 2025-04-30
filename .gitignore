@@ -18,3 +18,5 @@ catch2-subbuild/
 
 .DS_Store
 Thumbs.db
+
+.vscode/

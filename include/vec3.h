@@ -24,6 +24,8 @@ public:
     vec3& operator/= (double a);
     double length() const;
     double length_squared() const;
+    static vec3 random();
+    static vec3 random(double min, double max);
 };
 
 // alias
@@ -40,5 +42,7 @@ vec3 operator/(const vec3& v, double a);
 double dot(const vec3& u, const vec3& v);
 vec3 cross(const vec3& u, const vec3& v);
 vec3 unit_vector(const vec3& v);
+vec3 random_unit_vector();
+vec3 random_on_hemisphere(const vec3& normal);
 
 #endif

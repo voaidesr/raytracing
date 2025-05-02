@@ -14,7 +14,7 @@ TEST_CASE("ray intersects sphere at two points") {
     ray r(origin, direction);
     hit_record rec;
 
-    REQUIRE(s.hit(r, 0.001, 1000.0, rec) == true);
+    REQUIRE(s.hit(r, interval(0.001, 1000.0), rec) == true);
     REQUIRE(rec.t > 0.0);
     REQUIRE(rec.normal == vec3(0.0, 0.0, 1.0));
 }

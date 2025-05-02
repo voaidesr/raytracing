@@ -19,16 +19,26 @@ add_executable(raytracing
     src/vec3.cpp
     src/color.cpp
     src/sphere.cpp
+    src/hittable_list.cpp
+    src/utils.cpp
+    src/interval.cpp
+    src/camera.cpp
 )
 
 add_executable(tests
     tests/test_vec3.cpp
-    tests/test_color.cpp
     tests/test_ray.cpp
+    tests/test_sphere.cpp
+    tests/test_hittable_list.cpp
+    tests/test_interval.cpp
+    tests/test_utils.cpp
     src/vec3.cpp
     src/color.cpp
     src/sphere.cpp
-    tests/test_sphere.cpp
+    src/hittable_list.cpp
+    src/interval.cpp
+    src/camera.cpp
+    src/utils.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_include_directories(tests PRIVATE include)

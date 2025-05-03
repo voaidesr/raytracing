@@ -23,6 +23,7 @@ add_executable(raytracing
     src/utils.cpp
     src/interval.cpp
     src/camera.cpp
+    src/material.cpp
 )
 
 add_executable(tests
@@ -39,6 +40,7 @@ add_executable(tests
     src/interval.cpp
     src/camera.cpp
     src/utils.cpp
+    src/material.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_include_directories(tests PRIVATE include)

@@ -1,5 +1,8 @@
 #include "camera.h"
 #include "material.h"
+#include <omp.h>
+#include <atomic>
+#include <sstream>
 
 color camera::ray_color(const ray& r, int depth, const hittable& world) const {
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -71,19 +74,32 @@ vec3 camera::sample_square() const {
 void camera::render(const hittable& world) {
     initialize();
 
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    // ppm header
+    std::cout << "P3\n"
+              << image_width  << ' '
+              << image_height << "\n255\n"
+              << std::flush;
 
-    for (int j = 0; j < image_height; j++) {
-        std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-        for (int i = 0; i < image_width; i++) {
-            color pixel_color(0,0,0);
-            for (int sample = 0; sample < samples_per_pixel; sample++) {
-                ray r = get_ray(i, j);
-                pixel_color += ray_color(r, max_depth, world);
-            }
-            write_color(std::cout, pixel_samples_scale * pixel_color);
+    std::vector<color> framebuffer(image_width * image_height);
+    std::atomic<int> lines_remaining{image_height};
+
+    #pragma omp parallel for schedule(dynamic, 1)
+    for (int j = 0; j < image_height; ++j) {
+        for (int i = 0; i < image_width; ++i) {
+            color pixel(0,0,0);
+            for (int s = 0; s < samples_per_pixel; ++s)
+                pixel += ray_color(get_ray(i, j), max_depth, world);
+            framebuffer[j * image_width + i] = pixel * pixel_samples_scale;
         }
+        #pragma omp critical
+        std::clog << "\rScanlines remaining: "
+                  << --lines_remaining << ' ' << std::flush;
     }
+
+    // file-write
+    for (int j = 0; j < image_height; ++j)
+        for (int i = 0; i < image_width; ++i)
+            write_color(std::cout, framebuffer[j * image_width + i]);
 
     std::clog << "\rDone.                 \n";
 }

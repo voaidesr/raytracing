@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
-project(raytracing)
+project(RayTracer)
 
 set(CMAKE_CXX_STANDARD 17)
 
 include(FetchContent)
+find_package(OpenMP REQUIRED)
 
 FetchContent_Declare(
   Catch2
@@ -14,7 +15,7 @@ FetchContent_MakeAvailable(Catch2)
 
 include_directories(include)
 
-add_executable(raytracing
+add_executable(raytracer
     main.cpp
     src/vec3.cpp
     src/color.cpp
@@ -51,3 +52,5 @@ include(CTest)
 include(Catch)
 
 catch_discover_tests(tests)
+
+target_link_libraries(raytracer PRIVATE OpenMP::OpenMP_CXX)

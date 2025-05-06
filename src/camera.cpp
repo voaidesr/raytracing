@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <atomic>
 #include <sstream>
+#include "display.h"
 
 color camera::ray_color(const ray& r, int depth, const hittable& world) const {
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -19,6 +20,7 @@ color camera::ray_color(const ray& r, int depth, const hittable& world) const {
         return color(0,0,0);
     }
 
+    // sky
     vec3 unit_direction = unit_vector(r.direction());
     auto a = 0.5*(unit_direction.y() + 1.0);
     return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
@@ -73,33 +75,33 @@ vec3 camera::sample_square() const {
 
 void camera::render(const hittable& world) {
     initialize();
-
-    // ppm header
-    std::cout << "P3\n"
-              << image_width  << ' '
-              << image_height << "\n255\n"
-              << std::flush;
+    Display display(image_width, image_height);
 
     std::vector<color> framebuffer(image_width * image_height);
-    std::atomic<int> lines_remaining{image_height};
 
-    #pragma omp parallel for schedule(dynamic, 1)
-    for (int j = 0; j < image_height; ++j) {
+    for (int j = 0; j < image_height && display.is_open(); ++j) {
+        #pragma omp parallel for schedule(static)
         for (int i = 0; i < image_width; ++i) {
-            color pixel(0,0,0);
+            color pixel(0, 0, 0);
             for (int s = 0; s < samples_per_pixel; ++s)
                 pixel += ray_color(get_ray(i, j), max_depth, world);
-            framebuffer[j * image_width + i] = pixel * pixel_samples_scale;
+
+            pixel *= pixel_samples_scale;
+            framebuffer[j * image_width + i] = pixel;
         }
-        #pragma omp critical
+
+        for (int i = 0; i < image_width; ++i) {
+            const color& lin = framebuffer[j * image_width + i];
+            color gam = linear_to_gamma(lin);
+            display.set_pixel(i, j, gam);
+        }
+        display.update();
         std::clog << "\rScanlines remaining: "
-                  << --lines_remaining << ' ' << std::flush;
+                  << (image_height - 1 - j) << ' ' << std::flush;
     }
 
-    // file-write
-    for (int j = 0; j < image_height; ++j)
-        for (int i = 0; i < image_width; ++i)
-            write_color(std::cout, framebuffer[j * image_width + i]);
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    for (const auto& px : framebuffer) write_color(std::cout, px);
 
     std::clog << "\rDone.                 \n";
 }

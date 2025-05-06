@@ -3,8 +3,11 @@ project(RayTracer)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -DNDEBUG")
+
 include(FetchContent)
 find_package(OpenMP REQUIRED)
+find_package(SFML 2.5 REQUIRED COMPONENTS graphics window system)
 
 FetchContent_Declare(
   Catch2
@@ -25,6 +28,7 @@ add_executable(raytracer
     src/interval.cpp
     src/camera.cpp
     src/material.cpp
+    src/display.cpp
 )
 
 add_executable(tests
@@ -42,8 +46,24 @@ add_executable(tests
     src/camera.cpp
     src/utils.cpp
     src/material.cpp
+    src/display.cpp
 )
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(raytracer PRIVATE
+    OpenMP::OpenMP_CXX
+    sfml-graphics
+    sfml-window
+    sfml-system
+)
+
+
+target_link_libraries(tests PRIVATE
+    Catch2::Catch2WithMain
+    OpenMP::OpenMP_CXX
+    sfml-graphics
+    sfml-window
+    sfml-system
+)
+
 target_include_directories(tests PRIVATE include)
 
 enable_testing()
@@ -52,5 +72,3 @@ include(CTest)
 include(Catch)
 
 catch_discover_tests(tests)
-
-target_link_libraries(raytracer PRIVATE OpenMP::OpenMP_CXX)

@@ -5,10 +5,18 @@
 #include <sstream>
 #include "display.h"
 
+    double& camera::aspect_ratio() { return _aspect_ratio; }
+    int& camera::image_width() { return _image_width; }
+    int& camera::samples_per_pixel() { return _samples_per_pixel; }
+    int& camera::max_depth() { return _max_depth; }
+    double& camera::vfov() { return _vfov; }
+    point3& camera::lookfrom() { return _lookfrom; }
+    point3& camera::lookat() { return _lookat; }
+    vec3& camera::vup() { return _vup; }
+
 color camera::ray_color(const ray& r, int depth, const hittable& world) const {
-    // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
-        return color(0,0,0);
+        return color(0, 0, 0);
 
     hit_record rec;
 
@@ -16,47 +24,44 @@ color camera::ray_color(const ray& r, int depth, const hittable& world) const {
         ray scattered;
         color attenuation;
         if (rec.mat->scatter(r, rec, attenuation, scattered))
-            return attenuation * ray_color(scattered, depth-1, world);
-        return color(0,0,0);
+            return attenuation * ray_color(scattered, depth - 1, world);
+        return color(0, 0, 0);
     }
 
-    // sky
     vec3 unit_direction = unit_vector(r.direction());
-    auto a = 0.5*(unit_direction.y() + 1.0);
-    return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+    auto a = 0.5 * (unit_direction.y() + 1.0);
+    return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
 }
 
 void camera::initialize() {
-    image_height = int(image_width / aspect_ratio);
+    image_height = int(_image_width / _aspect_ratio);
     image_height = (image_height < 1) ? 1 : image_height;
 
-    pixel_samples_scale = 1.0 / samples_per_pixel;
+    pixel_samples_scale = 1.0 / _samples_per_pixel;
 
-    center = point3(0, 0, 0);
+    center = _lookfrom;
 
-    // Determine viewport dimensions.
-    auto focal_length = 1.0;
-    auto viewport_height = 2.0;
-    auto viewport_width = viewport_height * (double(image_width)/image_height);
+    auto focal_length = (_lookfrom - _lookat).length();
+    auto theta = degrees_to_radians(_vfov);
+    auto h = std::tan(theta / 2);
+    auto viewport_height = 2 * h * focal_length;
+    auto viewport_width = viewport_height * (double(_image_width) / image_height);
 
-    // Calculate the vectors across the horizontal and down the vertical viewport edges.
-    auto viewport_u = vec3(viewport_width, 0, 0);
-    auto viewport_v = vec3(0, -viewport_height, 0);
+    w = unit_vector(_lookfrom - _lookat);
+    u = unit_vector(cross(_vup, w));
+    v = cross(w, u);
 
-    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    pixel_delta_u = viewport_u / image_width;
+    vec3 viewport_u = viewport_width * u;
+    vec3 viewport_v = viewport_height * -v;
+
+    pixel_delta_u = viewport_u / _image_width;
     pixel_delta_v = viewport_v / image_height;
 
-    // Calculate the location of the upper left pixel.
-    auto viewport_upper_left =
-        center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+    auto viewport_upper_left = center - (focal_length * w) - viewport_u / 2 - viewport_v / 2;
     pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 }
 
 ray camera::get_ray(int i, int j) const {
-    // Construct a camera ray originating from the origin and directed at randomly sampled
-    // point around the pixel location i, j.
-
     auto offset = sample_square();
     auto pixel_sample = pixel00_loc
                       + ((i + offset.x()) * pixel_delta_u)
@@ -69,29 +74,28 @@ ray camera::get_ray(int i, int j) const {
 }
 
 vec3 camera::sample_square() const {
-    // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
     return vec3(random_double() - 0.5, random_double() - 0.5, 0);
 }
 
 void camera::render(const hittable& world) {
     initialize();
-    Display display(image_width, image_height);
+    Display display(_image_width, image_height);
 
-    std::vector<color> framebuffer(image_width * image_height);
+    std::vector<color> framebuffer(_image_width * image_height);
 
     for (int j = 0; j < image_height && display.is_open(); ++j) {
         #pragma omp parallel for schedule(static)
-        for (int i = 0; i < image_width; ++i) {
+        for (int i = 0; i < _image_width; ++i) {
             color pixel(0, 0, 0);
-            for (int s = 0; s < samples_per_pixel; ++s)
-                pixel += ray_color(get_ray(i, j), max_depth, world);
+            for (int s = 0; s < _samples_per_pixel; ++s)
+                pixel += ray_color(get_ray(i, j), _max_depth, world);
 
             pixel *= pixel_samples_scale;
-            framebuffer[j * image_width + i] = pixel;
+            framebuffer[j * _image_width + i] = pixel;
         }
 
-        for (int i = 0; i < image_width; ++i) {
-            const color& lin = framebuffer[j * image_width + i];
+        for (int i = 0; i < _image_width; ++i) {
+            const color& lin = framebuffer[j * _image_width + i];
             color gam = linear_to_gamma(lin);
             display.set_pixel(i, j, gam);
         }
@@ -100,7 +104,7 @@ void camera::render(const hittable& world) {
                   << (image_height - 1 - j) << ' ' << std::flush;
     }
 
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    std::cout << "P3\n" << _image_width << ' ' << image_height << "\n255\n";
     for (const auto& px : framebuffer) write_color(std::cout, px);
 
     std::clog << "\rDone.                 \n";

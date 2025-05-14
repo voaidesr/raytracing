@@ -3,7 +3,7 @@ project(RayTracer)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -DNDEBUG -funroll-loops -flto")
 
 include(FetchContent)
 find_package(OpenMP REQUIRED)

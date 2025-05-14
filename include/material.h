@@ -22,10 +22,23 @@ public:
 
 class metal : public material {
     color albedo;
+    double fuzz;
 public:
-    metal(const color& albedo);
+    metal(const color& albedo, double fuzz);
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override;
+};
+
+class dielectric : public material {
+    public:
+      dielectric(double refraction_index);
+
+      bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override;
+
+      static double reflectance(double cosine, double refraction_index);
+
+    private:
+        double refraction_index;
 };
 
 

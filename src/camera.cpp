@@ -13,6 +13,8 @@
     point3& camera::lookfrom() { return _lookfrom; }
     point3& camera::lookat() { return _lookat; }
     vec3& camera::vup() { return _vup; }
+    double& camera::defocus_angle() { return _defocus_angle; }
+    double& camera::focus_dist() { return _focus_dist; }
 
     color camera::ray_color(const ray& r0, int depth, const hittable& world) const {
         ray    r      = r0;
@@ -46,10 +48,9 @@ void camera::initialize() {
 
     center = _lookfrom;
 
-    auto focal_length = (_lookfrom - _lookat).length();
     auto theta = degrees_to_radians(_vfov);
     auto h = std::tan(theta / 2);
-    auto viewport_height = 2 * h * focal_length;
+    auto viewport_height = 2 * h * _focus_dist;
     auto viewport_width = viewport_height * (double(_image_width) / image_height);
 
     w = unit_vector(_lookfrom - _lookat);
@@ -62,8 +63,12 @@ void camera::initialize() {
     pixel_delta_u = viewport_u / _image_width;
     pixel_delta_v = viewport_v / image_height;
 
-    auto viewport_upper_left = center - (focal_length * w) - viewport_u / 2 - viewport_v / 2;
+    auto viewport_upper_left = center - (_focus_dist * w) - viewport_u / 2 - viewport_v / 2;
     pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+    auto defocus_radius = _focus_dist * std::tan(degrees_to_radians(_defocus_angle / 2));
+    defocus_disk_u = u * defocus_radius;
+    defocus_disk_v = v * defocus_radius;
 }
 
 ray camera::get_ray(int i, int j) const {
@@ -72,7 +77,7 @@ ray camera::get_ray(int i, int j) const {
                       + ((i + offset.x()) * pixel_delta_u)
                       + ((j + offset.y()) * pixel_delta_v);
 
-    auto ray_origin = center;
+    auto ray_origin = (_defocus_angle <= 0) ? center : defocus_disk_sample();
     auto ray_direction = pixel_sample - ray_origin;
 
     return ray(ray_origin, ray_direction);
@@ -80,6 +85,12 @@ ray camera::get_ray(int i, int j) const {
 
 vec3 camera::sample_square() const {
     return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+}
+
+point3 camera::defocus_disk_sample() const {
+    // Returns a random point in the camera defocus disk.
+    auto p = random_in_unit_disk();
+    return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
 }
 
 void camera::render(const hittable& world) {

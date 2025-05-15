@@ -14,23 +14,28 @@
     point3& camera::lookat() { return _lookat; }
     vec3& camera::vup() { return _vup; }
 
-color camera::ray_color(const ray& r, int depth, const hittable& world) const {
-    if (depth <= 0)
-        return color(0, 0, 0);
-
-    hit_record rec;
-
-    if (world.hit(r, interval(0.001, infinity), rec)) {
-        ray scattered;
-        color attenuation;
-        if (rec.mat->scatter(r, rec, attenuation, scattered))
-            return attenuation * ray_color(scattered, depth - 1, world);
-        return color(0, 0, 0);
-    }
-
-    vec3 unit_direction = unit_vector(r.direction());
-    auto a = 0.5 * (unit_direction.y() + 1.0);
-    return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
+    color camera::ray_color(const ray& r0, int depth, const hittable& world) const {
+        ray    r      = r0;
+        color  col    = color(1,1,1);
+        for (int i = 0; i < depth; ++i) {
+            hit_record rec;
+            if (!world.hit(r, interval(0.001, infinity), rec)) {
+                // sky
+                auto unit_d = unit_vector(r.direction());
+                auto t      = 0.5*(unit_d.y()+1.0);
+                col = col * ((1.0-t)*color(1,1,1) + t*color(0.5,0.7,1.0));
+                break;
+            }
+            ray    scattered;
+            color  attenuation;
+            if (!rec.mat->scatter(r, rec, attenuation, scattered)) {
+                col = color(0,0,0);
+                break;
+            }
+            col = col * attenuation;
+            r   = scattered;
+        }
+        return col;
 }
 
 void camera::initialize() {
@@ -85,20 +90,15 @@ void camera::render(const hittable& world) {
 
     for (int j = 0; j < image_height && display.is_open(); ++j) {
         #pragma omp parallel for schedule(static)
-        for (int i = 0; i < _image_width; ++i) {
-            color pixel(0, 0, 0);
-            for (int s = 0; s < _samples_per_pixel; ++s)
-                pixel += ray_color(get_ray(i, j), _max_depth, world);
-
-            pixel *= pixel_samples_scale;
-            framebuffer[j * _image_width + i] = pixel;
-        }
-
-        for (int i = 0; i < _image_width; ++i) {
-            const color& lin = framebuffer[j * _image_width + i];
-            color gam = linear_to_gamma(lin);
-            display.set_pixel(i, j, gam);
-        }
+            for (int i = 0; i < _image_width; ++i) {
+                color pixel(0,0,0);
+                for (int s = 0; s < _samples_per_pixel; ++s)
+                    pixel += ray_color(get_ray(i,j), _max_depth, world);
+                pixel *= pixel_samples_scale;
+                color gam = linear_to_gamma(pixel);
+                framebuffer[j*_image_width + i] = pixel;       // if you still need it
+                display.set_pixel(i, j, gam);
+            }
         display.update();
         std::clog << "\rScanlines remaining: "
                   << (image_height - 1 - j) << ' ' << std::flush;

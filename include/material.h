@@ -10,6 +10,10 @@ public:
     virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const {
         return false;
     }
+
+    virtual color get_color() const {
+        return color(1.0f, 1.0f, 1.0f);
+    }
 };
 
 class lambertian : public material {
@@ -18,6 +22,10 @@ public:
     lambertian(const color& albedo);
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override;
+
+    color get_color() const override {
+        return albedo;
+    }
 };
 
 class metal : public material {
@@ -27,18 +35,25 @@ public:
     metal(const color& albedo, double fuzz);
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override;
+
+    color get_color() const override {
+        return albedo;
+    }
 };
 
 class dielectric : public material {
-    public:
-      dielectric(double refraction_index);
+    color albedo;
+    double refraction_index;
+public:
+    dielectric(double refraction_index, color albedo);
 
-      bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override;
+    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override;
 
-      static double reflectance(double cosine, double refraction_index);
+    static double reflectance(double cosine, double refraction_index);
 
-    private:
-        double refraction_index;
+    color get_color() const override {
+        return albedo;
+    }
 };
 
 

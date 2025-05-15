@@ -20,6 +20,7 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, color& attenuat
     return true;
 }
 
+metal::metal(const color& albedo) : albedo(albedo) {}
 metal::metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
 
 bool metal::scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const {
@@ -35,11 +36,12 @@ bool metal::scatter(const ray& r_in, const hit_record& rec, color& attenuation, 
     return true;
 }
 
-dielectric::dielectric(double refraction_index, color albedo ) : refraction_index(refraction_index), albedo(albedo) {}
+dielectric::dielectric(double refraction_index) : refraction_index(refraction_index) {}
+dielectric::dielectric(double refraction_index, const color& alb) : refraction_index(refraction_index), albedo(alb) {}
+dielectric::dielectric(double refraction_index, const color& alb, const color& sig) : refraction_index(refraction_index), albedo(alb), sigma_a(sig) {}
 
 bool dielectric::scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const {
     attenuation = this->get_color();
-    color sigma_a = color(0, 1, 1);
     double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
     vec3 unit_direction = unit_vector(r_in.direction());

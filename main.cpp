@@ -20,20 +20,19 @@ int main() {
     world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.4, material_bubble));
     world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
 
-    camera cam;
+    auto& cam = camera::instance();
 
-    cam.aspect_ratio()      = 16.0 / 9.0;
-    cam.image_width()       = 1500;
-    cam.samples_per_pixel() = 700;
-    cam.max_depth ()        = 50;
+    cam.aspect_ratio.set(16.0 / 9.0);
+    cam.image_width.set(1500);
+    cam.samples_per_pixel.set(20);
+    cam.max_depth.set(50);
 
-
-    cam.vfov()     = 45;
-    cam.lookfrom() = point3(-2,0,1);
-    cam.lookat()   = point3(0,0,-1);
-    cam.vup()      = vec3(0,1,0);
-    cam.defocus_angle() = 2;
-    cam.focus_dist()    = 2;
+    cam.vfov.set(45);
+    cam.lookfrom.set(point3(-2,0,1));
+    cam.lookat.set(point3(0,0,-1));
+    cam.vup.set(vec3(0,1,0));
+    cam.defocus_angle.set(2);
+    cam.focus_dist.set(2);
 
     cam.render(world);
 }

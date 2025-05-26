@@ -2,17 +2,18 @@
 #define CAMERA_H
 
 #include "hittable.h"
+#include "property.h"
 
 class camera {
-    int    image_height;   // Rendered image height
-    double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
-    point3 center;         // Camera center
-    point3 pixel00_loc;    // Location of pixel 0, 0
-    vec3   pixel_delta_u;  // Offset to pixel to the right
-    vec3   pixel_delta_v;  // Offset to pixel below
-    vec3   u, v, w;              // Camera frame basis vectors
-    vec3   defocus_disk_u;       // Defocus disk horizontal radius
-    vec3   defocus_disk_v;       // Defocus disk vertical radius
+    int    image_height;
+    double pixel_samples_scale;
+    point3 center;
+    point3 pixel00_loc;
+    vec3   pixel_delta_u;
+    vec3   pixel_delta_v;
+    vec3   u, v, w;
+    vec3   defocus_disk_u;
+    vec3   defocus_disk_v;
 
     color ray_color(const ray& r, int depth, const hittable& world) const;
     void initialize();
@@ -20,28 +21,26 @@ class camera {
     point3 defocus_disk_sample() const;
     ray get_ray(int i, int j) const;
 
-    // accesible through public methods
-    double _aspect_ratio = 1.0;  // Ratio of image width over height
-    int _image_width  = 100;  // Rendered image width in pixel count
-    int _samples_per_pixel = 10;
-    int _max_depth = 10;
-    double _vfov = 90;  // Vertical view angle (field of view)
-    point3 _lookfrom = point3(0,0,0);   // Point camera is looking from
-    point3 _lookat   = point3(0,0,-1);  // Point camera is looking at
-    vec3   _vup      = vec3(0,1,0);     // Camera-relative "up" direction
-    double _defocus_angle = 0;  // Variation angle of rays through each pixel
-    double _focus_dist = 10;    // Distance from camera lookfrom point to plane of perfect focus
+    camera()  = default;
+    ~camera() = default;
+    camera(const camera&)            = delete;
+    camera(camera&&)                 = delete;
+    camera& operator=(const camera&) = delete;
+    camera& operator=(camera&&)      = delete;
+
 public:
-    double& aspect_ratio();
-    int& image_width();
-    int& samples_per_pixel();
-    int& max_depth();
-    double& vfov();
-    point3& lookfrom();
-    point3& lookat();
-    vec3& vup();
-    double& defocus_angle();
-    double& focus_dist();
+    Property<double> aspect_ratio = Property<double>(1.0);
+    Property<int> image_width = Property<int>(100);
+    Property<int> samples_per_pixel = Property<int>(10);
+    Property<int> max_depth = Property<int>(10);
+    Property<double> vfov = Property<double>(90);
+    Property<point3> lookfrom = Property<point3>(point3(0,0,0));
+    Property<point3> lookat = Property<point3>(point3(0,0,-1));
+    Property<vec3> vup = Property<vec3>(vec3(0,1,0));
+    Property<double> defocus_angle = Property<double>(0);
+    Property<double> focus_dist = Property<double>(10);
+
+    static camera& instance();
     void render(const hittable& world);
 };
 

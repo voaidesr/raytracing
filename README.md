@@ -1,3 +1,5 @@
+## Cerințe proiect
+[See here](./progress_gallery/cerinte.md)
 ## Setup
 Installing the prerequisites, on debian based Operating Systems:
 ```bash

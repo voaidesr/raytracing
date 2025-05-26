@@ -1,7 +1,7 @@
 #include "material.h"
 
 // Schlick’s approximation for metal
-inline color schlick_fresnel(const color &F0, double cosθ) {
+color schlick_fresnel(const color &F0, double cosθ) {
     double inv = 1.0 - cosθ;
     double pow5 = inv*inv*inv*inv*inv;
     return F0 + (color(1,1,1) - F0) * pow5;

@@ -29,6 +29,7 @@ add_executable(raytracer
     src/camera.cpp
     src/material.cpp
     src/display.cpp
+    src/scene.cpp
 )
 
 add_executable(tests
@@ -38,6 +39,7 @@ add_executable(tests
     tests/test_hittable_list.cpp
     tests/test_interval.cpp
     tests/test_utils.cpp
+    tests/test_materials.cpp
     src/vec3.cpp
     src/color.cpp
     src/sphere.cpp

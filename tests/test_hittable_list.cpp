@@ -1,48 +1,74 @@
-// #include "hittable_list.h"
-// #include "sphere.h"
-// #include "ray.h"
-// #include "vec3.h"  // assuming this is where point3/vec3 and fp_eq are defined
-// #include <catch2/catch_test_macros.hpp>
-// #include <memory>
+#include <catch2/catch_test_macros.hpp>
+#include <memory>
+#include <cmath>
+#include "hittable_list.h"
+#include "sphere.h"
+#include "ray.h"
+#include "interval.h"
+#include "material.h"
 
-// extern bool fp_eq(double a, double b);  // if fp_eq is not in a header
+static constexpr double EPS = 1e-6;
 
-// TEST_CASE("ray hits one sphere in hittable_list") {
-//     auto sphere_ptr = std::make_shared<sphere>(point3(0, 0, -5), 1.0);
-//     hittable_list world;
-//     world.add(sphere_ptr);
+TEST_CASE("Empty hittable_list yields no hit", "[hittable_list]") {
+    hittable_list world;
+    ray r(point3(0,0,0), vec3(1,0,0));
+    hit_record rec;
 
-//     ray r(point3(0, 0, 0), vec3(0, 0, -1));
-//     hit_record rec;
+    REQUIRE_FALSE(world.hit(r, interval(0.001, 1000.0), rec));
+}
 
-//     REQUIRE(world.hit(r, interval(0.001, 1000.0), rec) == true);
-//     REQUIRE(rec.t > 0.0);
-//     REQUIRE(fp_eq(rec.p.x(), 0.0));
-//     REQUIRE(fp_eq(rec.p.y(), 0.0));
-//     REQUIRE(fp_eq(rec.p.z(), -4.0));  // hit point: z = -4
-// }
+TEST_CASE("hittable_list with one sphere that misses", "[hittable_list]") {
+    auto mat = std::make_shared<lambertian>(color(1,1,1));
+    auto sph = std::make_shared<sphere>(point3(0,5,-5), 1.0, mat);
+    hittable_list world;
+    world.add(sph);
 
-// TEST_CASE("ray misses all objects in hittable_list") {
-//     auto sphere_ptr = std::make_shared<sphere>(point3(0, 0, -5), 1.0);
-//     hittable_list world;
-//     world.add(sphere_ptr);
+    ray r(point3(0,0,0), vec3(1,0,0));
+    hit_record rec;
 
-//     ray r(point3(0, 0, 0), vec3(0, 1, 0));  // ray goes upward
-//     hit_record rec;
+    REQUIRE_FALSE(world.hit(r, interval(0.001, 1000.0), rec));
+}
 
-//     REQUIRE(world.hit(r, interval(0.001, 1000.0), rec) == false);
-// }
+TEST_CASE("hittable_list with one sphere that hits", "[hittable_list]") {
+    auto mat = std::make_shared<lambertian>(color(0.5,0.5,0.5));
+    auto sph = std::make_shared<sphere>(point3(0,0,-5), 2.0, mat);
+    hittable_list world;
+    world.add(sph);
 
-// TEST_CASE("ray hits closest of two spheres in hittable_list") {
-//     auto near_sphere = std::make_shared<sphere>(point3(0, 0, -3), 0.5);
-//     auto far_sphere  = std::make_shared<sphere>(point3(0, 0, -10), 2.0);
-//     hittable_list world;
-//     world.add(near_sphere);
-//     world.add(far_sphere);
+    ray r(point3(0,0,0), vec3(0,0,-1));
+    hit_record rec;
 
-//     ray r(point3(0, 0, 0), vec3(0, 0, -1));
-//     hit_record rec;
+    REQUIRE(world.hit(r, interval(0.001, 1000.0), rec));
+    REQUIRE(rec.t > 2.0 - EPS);
+    REQUIRE(rec.t < 3.0 + EPS);
+    REQUIRE(rec.normal == vec3(0,0,1));
+}
 
-//     REQUIRE(world.hit(r, interval(0.001, 1000.0), rec) == true);
-//     REQUIRE(fp_eq(rec.p.z(), -2.5));  // closest hit point (sphere at -3, radius 0.5)
-// }
+TEST_CASE("hittable_list selects closest hit among multiple objects", "[hittable_list]") {
+    auto mat = std::make_shared<lambertian>(color(1,0,0));
+    auto near_sph = std::make_shared<sphere>(point3(0,0,-3), 0.5, mat);
+    auto far_sph  = std::make_shared<sphere>(point3(0,0,-5), 1.0, mat);
+    hittable_list world;
+    world.add(far_sph);
+    world.add(near_sph);
+
+    ray r(point3(0,0,0), vec3(0,0,-1));
+    hit_record rec;
+
+    REQUIRE(world.hit(r, interval(0.001, 1000.0), rec));
+    REQUIRE(std::abs(rec.t - 2.5) < EPS);
+    REQUIRE(rec.normal == vec3(0,0,1));
+}
+
+TEST_CASE("clear() removes all objects", "[hittable_list]") {
+    auto mat = std::make_shared<lambertian>(color(0.2,0.3,0.4));
+    auto sph = std::make_shared<sphere>(point3(0,0,-2), 1.0, mat);
+    hittable_list world;
+    world.add(sph);
+    world.clear();
+
+    ray r(point3(0,0,0), vec3(0,0,-1));
+    hit_record rec;
+
+    REQUIRE_FALSE(world.hit(r, interval(0.001, 1000.0), rec));
+}

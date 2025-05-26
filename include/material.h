@@ -3,6 +3,7 @@
 
 #include "hittable.h"
 
+color schlick_fresnel(const color &F0, double cosθ);
 class material {
 public:
     virtual ~material() = default;

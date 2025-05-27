@@ -50,45 +50,55 @@ point3 camera::defocus_disk_sample() const {
 }
 
 void camera::initialize() {
-    // ensure safe intervals
-    clamp(image_width, 10, 3000);
-    clamp(samples_per_pixel, 1, 1000);
-    clamp(vfov, 1.0, 180.0);
-    clamp(focus_dist, 0.01, 10000.0);
-    clamp(defocus_angle, 0.0, 45.0);
+    try {
+        clamp(image_width, 10, 3000);
+        clamp(samples_per_pixel, 1, 1000);
+        clamp(vfov, 1.0, 180.0);
+        clamp(focus_dist, 0.01, 10000.0);
+        clamp(defocus_angle, 0.0, 45.0);
 
-    image_height = static_cast<int>(image_width / aspect_ratio);
-    if (image_height < 1) image_height = 1;
+        if (aspect_ratio <= 0.0) {
+            throw std::invalid_argument("aspect_ratio must be positive");
+        }
 
-    pixel_samples_scale = 1.0 / samples_per_pixel;
+        image_height = static_cast<int>(image_width / aspect_ratio);
+        if (image_height < 1) image_height = 1;
 
-    center = lookfrom;
+        pixel_samples_scale = 1.0 / samples_per_pixel;
 
-    const double theta = degrees_to_radians(vfov);
-    const double h = std::tan(theta * 0.5);
-    const double viewport_height = 2.0 * h * focus_dist;
-    const double viewport_width  = viewport_height * (static_cast<double>(image_width) / image_height);
+        center = lookfrom;
 
-    w = unit_vector(lookfrom - lookat);
-    u = unit_vector(cross(vup, w));
-    v = cross(w, u);
+        const double theta = degrees_to_radians(vfov);
+        if (theta <= 0.0 || theta >= M_PI) {
+            throw std::invalid_argument("vfov must be between 0 and 180 degrees exclusive");
+        }
+        const double h = std::tan(theta * 0.5);
+        const double viewport_height = 2.0 * h * focus_dist;
+        const double viewport_width  = viewport_height * (static_cast<double>(image_width) / image_height);
 
-    const vec3 viewport_u = viewport_width * u;
-    const vec3 viewport_v = viewport_height * (-v);
+        w = unit_vector(lookfrom - lookat);
+        u = unit_vector(cross(vup, w));
+        v = cross(w, u);
 
-    pixel_delta_u = viewport_u / image_width;
-    pixel_delta_v = viewport_v / image_height;
+        const vec3 viewport_u = viewport_width * u;
+        const vec3 viewport_v = viewport_height * (-v);
 
-    const vec3 viewport_upper_left = center
-                                     - focus_dist * w
-                                     - viewport_u * 0.5
-                                     - viewport_v * 0.5;
+        pixel_delta_u = viewport_u / image_width;
+        pixel_delta_v = viewport_v / image_height;
 
-    pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+        const vec3 viewport_upper_left = center
+                                         - focus_dist * w
+                                         - viewport_u * 0.5
+                                         - viewport_v * 0.5;
 
-    const double defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle * 0.5));
-    defocus_disk_u = u * defocus_radius;
-    defocus_disk_v = v * defocus_radius;
+        pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+        const double defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle * 0.5));
+        defocus_disk_u = u * defocus_radius;
+        defocus_disk_v = v * defocus_radius;
+    } catch (const std::exception& e) {
+        throw;
+    }
 }
 
 ray camera::get_ray(int i, int j) const {
@@ -105,7 +115,11 @@ ray camera::get_ray(int i, int j) const {
 }
 
 void camera::render(const hittable& world) {
-    initialize();
+    try {
+        initialize();
+    } catch (const std::exception& e) {
+        throw;
+    }
 
     Display display(image_width, image_height);
     std::vector<color> framebuffer(image_width * image_height);

@@ -7,7 +7,26 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -DNDEBUG -funroll-loo
 
 include(FetchContent)
 find_package(OpenMP REQUIRED)
-find_package(SFML 2.5 REQUIRED COMPONENTS graphics window system)
+set(SFML3_COMPONENTS
+    SFML::Graphics
+    SFML::Window
+    SFML::System
+)
+
+find_package(SFML COMPONENTS ${SFML3_COMPONENTS} QUIET)
+
+if(SFML_FOUND)
+    message(STATUS "Found SFML 3.x")
+    set(_SFML_LINK_TARGETS ${SFML3_COMPONENTS})
+else()
+    find_package(SFML 2.5 REQUIRED COMPONENTS graphics window system)
+    message(STATUS "Found SFML 2.5")
+    set(_SFML_LINK_TARGETS
+        SFML::Graphics
+        SFML::Window
+        SFML::System
+    )
+endif()
 
 FetchContent_Declare(
   Catch2

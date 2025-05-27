@@ -6,8 +6,7 @@
 class material;
 
 // this could be a struct
-class hit_record {
-public:
+struct hit_record {
     point3 p;
     vec3 normal;
     shared_ptr<material> mat;
@@ -26,7 +25,6 @@ class hittable {
 public:
     virtual ~hittable() = default;
 
-    // pure virtual function, cannot be instantiated on its own
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 };
 #endif
